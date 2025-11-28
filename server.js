@@ -17,7 +17,13 @@ const API_BASE_URL = 'https://inference.do-ai.run/v1';
 // Generate image endpoint
 app.post('/api/generate', async (req, res) => {
   try {
-    const { prompt, num_inference_steps = 4, guidance_scale = 3.5, num_images = 1 } = req.body;
+    const { 
+      prompt, 
+      num_inference_steps = 4, 
+      guidance_scale = 3.5, 
+      num_images = 1,
+      model = 'fal-ai/flux/schnell' // Default to FLUX for better quality
+    } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'Prompt is required' });
@@ -27,19 +33,37 @@ app.post('/api/generate', async (req, res) => {
       return res.status(500).json({ error: 'MODEL_ACCESS_KEY is not configured' });
     }
 
-    // Step 1: Invoke the async request
-    const invokeResponse = await axios.post(
-      `${API_BASE_URL}/async-invoke`,
-      {
-        model_id: 'fal-ai/fast-sdxl',
+    // Model-specific configurations
+    const modelConfig = {
+      'fal-ai/flux/schnell': {
+        input: {
+          prompt,
+          image_size: 'landscape_16_9', // Higher resolution
+          num_inference_steps: Math.min(num_inference_steps, 4), // FLUX Schnell: 1-4 steps
+          num_images,
+          enable_safety_checker: true
+        }
+      },
+      'fal-ai/fast-sdxl': {
         input: {
           prompt,
           output_format: 'landscape_4_3',
-          num_inference_steps,
+          num_inference_steps: Math.min(num_inference_steps, 8), // SDXL Fast: 1-8 steps
           guidance_scale,
           num_images,
           enable_safety_checker: true
         }
+      }
+    };
+
+    const selectedConfig = modelConfig[model] || modelConfig['fal-ai/flux/schnell'];
+
+    // Step 1: Invoke the async request
+    const invokeResponse = await axios.post(
+      `${API_BASE_URL}/async-invoke`,
+      {
+        model_id: model,
+        ...selectedConfig
       },
       {
         headers: {
@@ -50,7 +74,7 @@ app.post('/api/generate', async (req, res) => {
     );
 
     const requestId = invokeResponse.data.request_id;
-    console.log(`Image generation started with request_id: ${requestId}`);
+    console.log(`Image generation started with model: ${model}, request_id: ${requestId}`);
 
     // Step 2: Poll for completion
     let status = 'PENDING';
