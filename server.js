@@ -113,9 +113,12 @@ app.post('/api/generate', async (req, res) => {
     console.log('Image generation complete!');
     console.log('Result:', JSON.stringify(resultResponse.data, null, 2));
 
+    // Extract the output from the response
+    const output = resultResponse.data.output || resultResponse.data;
+
     res.json({
       success: true,
-      data: resultResponse.data
+      data: output
     });
 
   } catch (error) {
