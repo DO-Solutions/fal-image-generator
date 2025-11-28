@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator - Fal.ai SDXL</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .advanced-options {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .advanced-options.show {
+            display: block;
+        }
+
+        .slider-group {
+            margin-bottom: 15px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .toggle-btn {
+            background: #6c757d;
+            flex: 0.5;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 30px;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result img {
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-btn {
+            margin-top: 15px;
+            background: #28a745;
+        }
+
+        .error {
+            display: none;
+            padding: 15px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 10px;
+            color: #721c24;
+            margin-top: 20px;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 10px;
+        }
+
+        .examples h3 {
+            color: #333;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .examples p {
+            color: #555;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .examples p:hover {
+            color: #667eea;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .toggle-btn {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AI Image Generator</h1>
+        <p class="subtitle">Powered by Fal.ai Stable Diffusion XL on DigitalOcean</p>
+
+        <div class="input-group">
+            <label for="prompt">Image Prompt</label>
+            <textarea 
+                id="prompt" 
+                placeholder="Describe the image you want to generate... e.g., A serene mountain landscape at sunset with a crystal clear lake"
+            ></textarea>
+        </div>
+
+        <div class="button-group">
+            <button id="generateBtn">Generate Image</button>
+            <button class="toggle-btn" id="toggleOptions">Advanced</button>
+        </div>
+
+        <div class="advanced-options" id="advancedOptions">
+            <div class="slider-group">
+                <div class="slider-label">
+                    <label>Inference Steps</label>
+                    <span id="stepsValue">4</span>
+                </div>
+                <input type="range" id="steps" min="1" max="8" value="4" step="1">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-label">
+                    <label>Guidance Scale</label>
+                    <span id="guidanceValue">3.5</span>
+                </div>
+                <input type="range" id="guidance" min="1" max="10" value="3.5" step="0.5">
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating your image... This may take 10-30 seconds</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <img id="generatedImage" alt="Generated Image">
+            <button class="download-btn" id="downloadBtn">Download Image</button>
+        </div>
+
+        <div class="examples">
+            <h3>💡 Example Prompts (click to use):</h3>
+            <p>A futuristic cyberpunk city at night with neon lights</p>
+            <p>A magical forest with glowing mushrooms and fireflies</p>
+            <p>A steampunk airship flying through clouds at sunset</p>
+            <p>A cozy cabin in snowy mountains with warm lights</p>
+        </div>
+    </div>
+
+    <script>
+        const promptInput = document.getElementById('prompt');
+        const generateBtn = document.getElementById('generateBtn');
+        const toggleOptionsBtn = document.getElementById('toggleOptions');
+        const advancedOptions = document.getElementById('advancedOptions');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const generatedImage = document.getElementById('generatedImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const stepsSlider = document.getElementById('steps');
+        const guidanceSlider = document.getElementById('guidance');
+        const stepsValue = document.getElementById('stepsValue');
+        const guidanceValue = document.getElementById('guidanceValue');
+
+        // Toggle advanced options
+        toggleOptionsBtn.addEventListener('click', () => {
+            advancedOptions.classList.toggle('show');
+        });
+
+        // Update slider values
+        stepsSlider.addEventListener('input', (e) => {
+            stepsValue.textContent = e.target.value;
+        });
+
+        guidanceSlider.addEventListener('input', (e) => {
+            guidanceValue.textContent = e.target.value;
+        });
+
+        // Example prompts
+        document.querySelectorAll('.examples p').forEach(example => {
+            example.addEventListener('click', () => {
+                promptInput.value = example.textContent;
+            });
+        });
+
+        // Generate image
+        generateBtn.addEventListener('click', async () => {
+            const prompt = promptInput.value.trim();
+
+            if (!prompt) {
+                showError('Please enter a prompt');
+                return;
+            }
+
+            // Reset UI
+            loading.classList.add('show');
+            result.classList.remove('show');
+            error.classList.remove('show');
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        prompt,
+                        num_inference_steps: parseInt(stepsSlider.value),
+                        guidance_scale: parseFloat(guidanceSlider.value),
+                        num_images: 1
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate image');
+                }
+
+                // Display the generated image
+                if (data.data && data.data.images && data.data.images.length > 0) {
+                    generatedImage.src = data.data.images[0].url;
+                    result.classList.add('show');
+                } else {
+                    throw new Error('No image URL in response');
+                }
+
+            } catch (err) {
+                showError(err.message);
+            } finally {
+                loading.classList.remove('show');
+                generateBtn.disabled = false;
+            }
+        });
+
+        // Download image
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.href = generatedImage.src;
+            link.download = `ai-generated-${Date.now()}.png`;
+            link.click();
+        });
+
+        function showError(message) {
+            error.textContent = `Error: ${message}`;
+            error.classList.add('show');
+        }
+
+        // Allow Enter key to generate (with Shift+Enter for new line)
+        promptInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                generateBtn.click();
+            }
+        });
+    </script>
+</body>
+</html>
