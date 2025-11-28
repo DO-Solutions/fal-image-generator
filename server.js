@@ -60,7 +60,7 @@ app.post('/api/generate', async (req, res) => {
 
     console.log(`Starting to poll for request_id: ${requestId}`);
 
-    while (status !== 'COMPLETE' && attempts < maxAttempts) {
+    while (status !== 'COMPLETED' && attempts < maxAttempts) {
       await new Promise(resolve => setTimeout(resolve, pollInterval));
 
       try {
@@ -92,7 +92,7 @@ app.post('/api/generate', async (req, res) => {
       }
     }
 
-    if (status !== 'COMPLETE') {
+    if (status !== 'COMPLETED') {
       console.error(`Request timed out after ${attempts} attempts`);
       return res.status(408).json({ 
         error: `Request timed out after ${attempts} seconds. The image may still be generating. Try again in a moment.`,
