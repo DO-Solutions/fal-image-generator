@@ -102,6 +102,23 @@
             -webkit-appearance: none;
         }
 
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
@@ -261,7 +278,7 @@
 <body>
     <div class="container">
         <h1>🎨 AI Image Generator</h1>
-        <p class="subtitle">Powered by Fal.ai Stable Diffusion XL on DigitalOcean</p>
+        <p class="subtitle">Powered by Fal.ai FLUX & SDXL on DigitalOcean</p>
 
         <div class="input-group">
             <label for="prompt">Image Prompt</label>
@@ -269,6 +286,14 @@
                 id="prompt" 
                 placeholder="Describe the image you want to generate... e.g., A serene mountain landscape at sunset with a crystal clear lake"
             ></textarea>
+        </div>
+
+        <div class="input-group">
+            <label for="modelSelect">AI Model</label>
+            <select id="modelSelect">
+                <option value="fal-ai/flux/schnell" selected>FLUX Schnell (Higher Quality, Recommended)</option>
+                <option value="fal-ai/fast-sdxl">SDXL Fast (Faster)</option>
+            </select>
         </div>
 
         <div class="button-group">
@@ -282,15 +307,17 @@
                     <label>Inference Steps</label>
                     <span id="stepsValue">4</span>
                 </div>
-                <input type="range" id="steps" min="1" max="8" value="4" step="1">
+                <input type="range" id="steps" min="1" max="4" value="4" step="1">
+                <small style="color: #666; font-size: 0.85rem;">FLUX: 1-4 steps (4 recommended) | SDXL: 1-8 steps</small>
             </div>
 
-            <div class="slider-group">
+            <div class="slider-group" id="guidanceGroup">
                 <div class="slider-label">
                     <label>Guidance Scale</label>
                     <span id="guidanceValue">3.5</span>
                 </div>
                 <input type="range" id="guidance" min="1" max="10" value="3.5" step="0.5">
+                <small style="color: #666; font-size: 0.85rem;">Only for SDXL model</small>
             </div>
         </div>
 
@@ -329,6 +356,26 @@
         const guidanceSlider = document.getElementById('guidance');
         const stepsValue = document.getElementById('stepsValue');
         const guidanceValue = document.getElementById('guidanceValue');
+        const modelSelect = document.getElementById('modelSelect');
+        const guidanceGroup = document.getElementById('guidanceGroup');
+
+        // Update slider max based on model selection
+        modelSelect.addEventListener('change', (e) => {
+            const model = e.target.value;
+            if (model === 'fal-ai/flux/schnell') {
+                stepsSlider.max = 4;
+                if (parseInt(stepsSlider.value) > 4) {
+                    stepsSlider.value = 4;
+                    stepsValue.textContent = 4;
+                }
+                guidanceGroup.style.opacity = '0.5';
+                guidanceSlider.disabled = true;
+            } else {
+                stepsSlider.max = 8;
+                guidanceGroup.style.opacity = '1';
+                guidanceSlider.disabled = false;
+            }
+        });
 
         // Toggle advanced options
         toggleOptionsBtn.addEventListener('click', () => {
@@ -376,7 +423,8 @@
                         prompt,
                         num_inference_steps: parseInt(stepsSlider.value),
                         guidance_scale: parseFloat(guidanceSlider.value),
-                        num_images: 1
+                        num_images: 1,
+                        model: modelSelect.value
                     })
                 });
 
@@ -422,6 +470,9 @@
                 generateBtn.click();
             }
         });
+
+        // Initialize guidance group state
+        guidanceGroup.style.transition = 'opacity 0.3s';
     </script>
 </body>
 </html>
